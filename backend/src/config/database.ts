@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient, QueryResultRow } from 'pg';
 import { logger } from '../utils/logger';
 
 export const db = new Pool({
@@ -16,12 +16,12 @@ db.on('error', (err) => {
 });
 
 // Helper: run a query with automatic client acquisition
-export async function query<T = any>(
+export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params?: unknown[]
 ): Promise<{ rows: T[]; rowCount: number | null }> {
   const start = Date.now();
-  const result = await db.query<T>(text, params);
+  const result = await db.query<T>(text, params as any[]);
   const duration = Date.now() - start;
   if (duration > 200) {
     logger.warn(`Slow query (${duration}ms): ${text.slice(0, 80)}`);
@@ -31,12 +31,12 @@ export async function query<T = any>(
 
 // Helper: run multiple queries in a single transaction
 export async function withTransaction<T>(
-  fn: (client: ReturnType<typeof db.connect> extends Promise<infer C> ? C : never) => Promise<T>
+  fn: (client: PoolClient) => Promise<T>
 ): Promise<T> {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    const result = await fn(client as any);
+    const result = await fn(client);
     await client.query('COMMIT');
     return result;
   } catch (err) {
