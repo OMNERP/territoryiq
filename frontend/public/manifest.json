@@ -1,0 +1,43 @@
+{
+  "name": "TerritoryIQ",
+  "short_name": "TerritoryIQ",
+  "description": "Medical Sales Force Territory Intelligence Platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Territory Intelligence Dashboard"
+    },
+    {
+      "name": "Check In",
+      "url": "/visits",
+      "description": "Log a doctor or customer visit"
+    },
+    {
+      "name": "My Report",
+      "url": "/dar",
+      "description": "Submit daily activity report"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en"
+}
