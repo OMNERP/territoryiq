@@ -1,0 +1,1 @@
+export { AlertStrip } from './index';
