@@ -51,7 +51,7 @@ function PotentialBar({ score }: { score: number }) {
       <div className="w-16 h-1.5 bg-bg-4 rounded-full overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${score * 10}%`, background: color }} />
       </div>
-      <span className="text-xs font-semibold" style={{ color }}>{score.toFixed(1)}</span>
+      <span className="text-xs font-semibold" style={{ color }}>{Number(score || 0).toFixed(1)}</span>
     </div>
   );
 }
@@ -73,7 +73,7 @@ export default function DoctorsPage() {
 
   const filtered = doctors.filter((d) => {
     const s = search.toLowerCase();
-    const matchSearch = d.name.toLowerCase().includes(s) || d.city?.toLowerCase().includes(s) || d.clinicHospital?.toLowerCase().includes(s);
+    const matchSearch = (d?.name || '').toLowerCase().includes(s) || (d?.city || '').toLowerCase().includes(s) || (d?.clinicHospital || '').toLowerCase().includes(s);
     const matchSpec = specialty === 'all' || d.specialty === specialty;
     const matchPriority = priority === 'all' || d.priority === priority;
     return matchSearch && matchSpec && matchPriority;

@@ -14,15 +14,15 @@ async function seed() {
     // ── Users ──────────────────────────────────────────────────────────────
     console.log('  → Users...');
     await client.query(`
-      INSERT INTO users (id, email, password_hash, role) VALUES
-        ('00000000-0000-0000-0000-000000000001', 'admin@territoryiq.com',        '${HASH('Admin@123')}',    'admin'),
-        ('00000000-0000-0000-0000-000000000002', 'manager.north@territoryiq.com','${HASH('Manager@123')}', 'sales_manager'),
-        ('00000000-0000-0000-0000-000000000003', 'manager.south@territoryiq.com','${HASH('Manager@123')}', 'regional_manager'),
-        ('00000000-0000-0000-0000-000000000004', 'mr.rajesh@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative'),
-        ('00000000-0000-0000-0000-000000000005', 'mr.priya@territoryiq.com',     '${HASH('MR@12345')}',    'medical_representative'),
-        ('00000000-0000-0000-0000-000000000006', 'mr.arjun@territoryiq.com',     '${HASH('MR@12345')}',    'medical_representative'),
-        ('00000000-0000-0000-0000-000000000007', 'mr.sunita@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative'),
-        ('00000000-0000-0000-0000-000000000008', 'mr.vikram@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative')
+      INSERT INTO users (id, email, password_hash, role, "fullName") VALUES
+        ('00000000-0000-0000-0000-000000000001', 'admin@territoryiq.com',        '${HASH('Admin@123')}',    'admin',                  'System Administrator'),
+        ('00000000-0000-0000-0000-000000000002', 'manager.north@territoryiq.com','${HASH('Manager@123')}', 'sales_manager',          'North Sales Manager'),
+        ('00000000-0000-0000-0000-000000000003', 'manager.south@territoryiq.com','${HASH('Manager@123')}', 'regional_manager',       'South Regional Manager'),
+        ('00000000-0000-0000-0000-000000000004', 'mr.rajesh@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative', 'Rajesh Kumar'),
+        ('00000000-0000-0000-0000-000000000005', 'mr.priya@territoryiq.com',     '${HASH('MR@12345')}',    'medical_representative', 'Priya Sharma'),
+        ('00000000-0000-0000-0000-000000000006', 'mr.arjun@territoryiq.com',     '${HASH('MR@12345')}',    'medical_representative', 'Arjun Singh'),
+        ('00000000-0000-0000-0000-000000000007', 'mr.sunita@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative', 'Sunita Patel'),
+        ('00000000-0000-0000-0000-000000000008', 'mr.vikram@territoryiq.com',    '${HASH('MR@12345')}',    'medical_representative', 'Vikram Malhotra')
       ON CONFLICT (email) DO NOTHING
     `);
 

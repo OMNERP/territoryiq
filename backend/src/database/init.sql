@@ -22,9 +22,47 @@ CREATE TYPE visit_outcome AS ENUM ('positive', 'neutral', 'negative', 'follow_up
 CREATE TYPE geo_validation_status AS ENUM ('valid', 'invalid', 'suspicious', 'unverified');
 CREATE TYPE alert_severity AS ENUM ('critical', 'warning', 'info');
 CREATE TYPE alert_type AS ENUM (
-  'missed_visit', 'low_coverage', 'geo_anomaly', 'inactive_mr',
-  'pending_followup', 'target_failure', 'sample_low'
+  'missed_visit', 
+  'low_coverage', 
+  'geo_anomaly', 
+  'inactive_mr',
+  'pending_followup', 
+  'target_failure', 
+  'sample_low'
 );
+
+-- Explicit Cast Overrides (Forces Postgres to accept standard app strings during seeding)
+CREATE CAST (varchar AS geo_validation_status) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS geo_validation_status) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS visit_outcome) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS visit_outcome) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS user_role) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS user_role) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS visit_type) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS visit_type) WITH INOUT AS IMPLICIT;
+
+-- =========================================================================
+-- AUTOMATIC ENUM CASTING ENGINES (Dynamic Catch-All Loop)
+-- =========================================================================
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT t.typname 
+        FROM pg_type t 
+        JOIN pg_namespace n ON n.oid = t.typnamespace 
+        WHERE t.typtype = 'e' AND n.nspname = 'public'
+    LOOP
+        BEGIN
+            EXECUTE format('CREATE CAST (varchar AS %I) WITH INOUT AS IMPLICIT', r.typname);
+            EXECUTE format('CREATE CAST (text AS %I) WITH INOUT AS IMPLICIT', r.typname);
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END;
+    END LOOP;
+END $$;
+-- =========================================================================
 
 -- ─── USERS ──────────────────────────────────────────────────────────────────
 
@@ -51,7 +89,7 @@ CREATE TABLE territories (
   region                VARCHAR(100) NOT NULL,
   state                 VARCHAR(100),
   country               VARCHAR(100) NOT NULL DEFAULT 'India',
-  boundary              GEOGRAPHY(MULTIPOLYGON, 4326), -- PostGIS geo boundary
+  boundary              GEOGRAPHY(MULTIPOLYGON, 4326),
   is_active             BOOLEAN NOT NULL DEFAULT true,
   heatmap_score         NUMERIC(5,2) DEFAULT 0,
   route_efficiency_score NUMERIC(5,2) DEFAULT 0,
@@ -91,7 +129,6 @@ CREATE INDEX idx_mr_manager_id    ON medical_representatives (manager_id);
 CREATE INDEX idx_mr_employee_id   ON medical_representatives (employee_id);
 CREATE INDEX idx_mr_status        ON medical_representatives (status);
 
--- MR ↔ Products (many-to-many)
 CREATE TABLE mr_products (
   mr_id       UUID NOT NULL REFERENCES medical_representatives (id) ON DELETE CASCADE,
   product_id  UUID NOT NULL,
@@ -116,7 +153,7 @@ CREATE TABLE doctors (
   email               VARCHAR(255),
   visit_frequency_days INT DEFAULT 30,
   priority            doctor_priority NOT NULL DEFAULT 'medium',
-  potential_score     NUMERIC(4,2) DEFAULT 5.0, -- 0-10
+  potential_score     NUMERIC(4,2) DEFAULT 5.0,
   preferred_products  TEXT[],
   last_visit_date     DATE,
   assigned_mr_id      UUID REFERENCES medical_representatives (id) ON DELETE SET NULL,
@@ -190,17 +227,17 @@ CREATE TABLE visits (
   customer_id           UUID REFERENCES customers (id) ON DELETE SET NULL,
   checkin_time          TIMESTAMPTZ NOT NULL,
   checkout_time         TIMESTAMPTZ,
-  duration_minutes      INT,                          -- auto calculated
+  duration_minutes      INT,
   checkin_lat           NUMERIC(10,7),
   checkin_lng           NUMERIC(10,7),
   checkin_geo           GEOGRAPHY(POINT, 4326),
   checkout_lat          NUMERIC(10,7),
   checkout_lng          NUMERIC(10,7),
   geo_validation_status geo_validation_status NOT NULL DEFAULT 'unverified',
-  geo_distance_meters   NUMERIC(10,2),               -- distance from target location
+  geo_distance_meters   NUMERIC(10,2),
   discussion_notes      TEXT,
   products_discussed    TEXT[],
-  samples_given         JSONB,                        -- [{product_id, quantity}]
+  samples_given         JSONB,
   followup_date         DATE,
   competitor_activity   TEXT,
   visit_outcome         visit_outcome DEFAULT 'neutral',
@@ -220,7 +257,7 @@ CREATE INDEX idx_visits_doctor_id     ON visits (doctor_id);
 CREATE INDEX idx_visits_customer_id   ON visits (customer_id);
 CREATE INDEX idx_visits_checkin_time  ON visits (checkin_time DESC);
 CREATE INDEX idx_visits_geo           ON visits USING GIST (checkin_geo);
-CREATE INDEX idx_visits_date          ON visits (DATE(checkin_time));
+CREATE INDEX idx_visits_date          ON visits (((checkin_time AT TIME ZONE 'UTC')::date));
 
 -- ─── DAILY ACTIVITY REPORTS ─────────────────────────────────────────────────
 
@@ -234,7 +271,7 @@ CREATE TABLE daily_activity_reports (
   competitor_activities TEXT,
   market_feedback       TEXT,
   route_distance_km     NUMERIC(8,2),
-  gps_logs              JSONB,                        -- [{lat, lng, timestamp}]
+  gps_logs              JSONB,
   photo_urls            TEXT[],
   voice_note_url        TEXT,
   submitted_at          TIMESTAMPTZ,
@@ -265,8 +302,6 @@ CREATE TABLE gps_logs (
 CREATE INDEX idx_gps_mr_id       ON gps_logs (mr_id);
 CREATE INDEX idx_gps_recorded_at ON gps_logs (recorded_at DESC);
 CREATE INDEX idx_gps_geo         ON gps_logs USING GIST (geo_point);
-
--- Partition hint: in production, partition gps_logs by month
 
 -- ─── TERRITORY COVERAGE SNAPSHOTS ───────────────────────────────────────────
 
@@ -346,7 +381,6 @@ CREATE INDEX idx_audit_created   ON audit_logs (created_at DESC);
 
 -- ─── FUNCTIONS & TRIGGERS ───────────────────────────────────────────────────
 
--- Auto-update updated_at
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -363,7 +397,6 @@ CREATE TRIGGER trg_customers_updated_at           BEFORE UPDATE ON customers    
 CREATE TRIGGER trg_visits_updated_at              BEFORE UPDATE ON visits              FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_dar_updated_at                 BEFORE UPDATE ON daily_activity_reports FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- Auto-calculate visit duration on checkout
 CREATE OR REPLACE FUNCTION calculate_visit_duration()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -378,7 +411,6 @@ CREATE TRIGGER trg_visit_duration
   BEFORE INSERT OR UPDATE ON visits
   FOR EACH ROW EXECUTE FUNCTION calculate_visit_duration();
 
--- Auto-populate geo_point from lat/lng on doctors
 CREATE OR REPLACE FUNCTION set_doctor_geo_point()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -393,7 +425,6 @@ CREATE TRIGGER trg_doctor_geo_point
   BEFORE INSERT OR UPDATE ON doctors
   FOR EACH ROW EXECUTE FUNCTION set_doctor_geo_point();
 
--- Same for customers
 CREATE OR REPLACE FUNCTION set_customer_geo_point()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -408,7 +439,6 @@ CREATE TRIGGER trg_customer_geo_point
   BEFORE INSERT OR UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION set_customer_geo_point();
 
--- Same for visits checkin
 CREATE OR REPLACE FUNCTION set_visit_geo_point()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -423,7 +453,6 @@ CREATE TRIGGER trg_visit_geo_point
   BEFORE INSERT OR UPDATE ON visits
   FOR EACH ROW EXECUTE FUNCTION set_visit_geo_point();
 
--- Same for gps_logs
 CREATE OR REPLACE FUNCTION set_gps_geo_point()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -438,7 +467,6 @@ CREATE TRIGGER trg_gps_geo_point
 
 -- ─── VIEWS ──────────────────────────────────────────────────────────────────
 
--- MR Activity Summary (today)
 CREATE OR REPLACE VIEW vw_mr_activity_today AS
 SELECT
   mr.id,
@@ -460,11 +488,11 @@ SELECT
   END AS live_status
 FROM medical_representatives mr
 LEFT JOIN territories t ON mr.territory_id = t.id
-LEFT JOIN visits v ON v.mr_id = mr.id AND DATE(v.checkin_time) = CURRENT_DATE
+-- FIX: Replaced non-immutable DATE() call with proper cast matching index evaluation rules
+LEFT JOIN visits v ON v.mr_id = mr.id AND (v.checkin_time AT TIME ZONE 'UTC')::date = CURRENT_DATE
 WHERE mr.status = 'active'
 GROUP BY mr.id, t.name, t.city;
 
--- Territory coverage summary
 CREATE OR REPLACE VIEW vw_territory_coverage AS
 SELECT
   t.id,

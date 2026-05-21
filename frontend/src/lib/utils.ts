@@ -87,12 +87,11 @@ export function statusTag(status: string): string {
   return map[status] || 'tag-gray';
 }
 
-export function initials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0]?.toUpperCase() || '')
-    .slice(0, 2)
-    .join('');
+export function initials(name: string | null | undefined): string {
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    return 'A'; 
+  }
+  return name.trim().split(/\s+/).map((n) => n[0]?.toUpperCase() || '').slice(0, 2).join('');
 }
 
 export const AVATAR_GRADIENTS = [

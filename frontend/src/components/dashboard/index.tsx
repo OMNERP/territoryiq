@@ -117,7 +117,7 @@ export function LiveMrList() {
         const pct = Math.min(110, Math.round((mr.visitsToday / mr.dailyVisitTarget) * 100));
         const barColor = pct >= 100 ? 'bg-success' : pct >= 70 ? 'bg-accent' : pct >= 40 ? 'bg-warning' : 'bg-danger';
         const textColor = pct >= 100 ? 'text-success' : pct >= 70 ? 'text-accent' : pct >= 40 ? 'text-warning' : 'text-danger';
-        const initials = mr.fullName.split(' ').map((n: string) => n[0]).join('').slice(0,2);
+        const initials = (mr?.fullName || 'Medical Representative').trim().split(/\s+/).map((n: string) => n[0]?.toUpperCase() || '').slice(0,2).join('');
 
         return (
           <div key={mr.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] last:border-0 hover:bg-bg-4 transition-colors cursor-pointer">

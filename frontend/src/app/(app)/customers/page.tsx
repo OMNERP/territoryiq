@@ -57,7 +57,7 @@ export default function CustomersPage() {
 
   const filtered = customers.filter((c) => {
     const s = search.toLowerCase();
-    const matchSearch = c.name.toLowerCase().includes(s) || c.city?.toLowerCase().includes(s);
+    const matchSearch = (c?.name || '').toLowerCase().includes(s) || (c?.city || '').toLowerCase().includes(s);
     const matchType   = typeFilter === 'all' || c.customerType === typeFilter;
     return matchSearch && matchType;
   });

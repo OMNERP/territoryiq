@@ -41,7 +41,7 @@ export default function CoveragePage() {
   const totalDoctors  = COVERAGE_TABLE.reduce((s, r) => s + r.total,   0);
   const totalCovered  = COVERAGE_TABLE.reduce((s, r) => s + r.covered, 0);
   const totalGap      = COVERAGE_TABLE.reduce((s, r) => s + r.gap,     0);
-  const avgCoverage   = (totalCovered / totalDoctors * 100).toFixed(1);
+  const avgCoverage   = totalDoctors > 0 ? ((totalCovered / totalDoctors) * 100).toFixed(1) : "0.0";
 
   return (
     <div className="space-y-6 animate-fade-in">

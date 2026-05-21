@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "seed": "tsx src/database/seed.ts",
+    "seed": "node dist/database/seed.js || tsx src/database/seed.ts",
     "migrate": "tsx src/database/migrate.ts"
   },
   "dependencies": {

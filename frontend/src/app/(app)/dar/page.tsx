@@ -75,7 +75,7 @@ export default function DarPage() {
                   <td className="px-4 py-3 text-sm font-medium">{r.doctorCalls || r.doctor_calls}</td>
                   <td className="px-4 py-3 text-sm">{r.customerVisits || r.customer_visits}</td>
                   <td className="px-4 py-3 text-sm">{r.samplesDistributed || r.samples_distributed}</td>
-                  <td className="px-4 py-3 text-sm text-text-2">{(r.routeDistanceKm || r.route_distance_km || 0).toFixed(1)} km</td>
+                  <td className="px-4 py-3 text-sm text-text-2">{Number(r.routeDistanceKm || r.route_distance_km || 0).toFixed(1)} km</td>
                   <td className="px-4 py-3">
                     <span className={cn('tag', (r.isSubmitted || r.is_submitted) ? 'tag-green' : 'tag-amber')}>
                       {(r.isSubmitted || r.is_submitted) ? 'Submitted' : 'Pending'}

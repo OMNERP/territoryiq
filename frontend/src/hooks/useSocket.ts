@@ -5,7 +5,18 @@ import { useAuthStore } from '@/store/auth.store';
 import { useDashboardStore } from '@/store/index';
 import toast from 'react-hot-toast';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
+// 1. Dynamic fallback calculation: If the environment variable is missing on a new setup, 
+// it extracts the current URL domain/IP from the browser and replaces 'http' with 'ws'
+const getWsUrl = () => {
+  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  if (typeof window !== 'undefined') {
+    // Extract the hostname (e.g., "192.168.100.20") and force it to talk to the backend port 4000
+    const hostname = window.location.hostname;
+    return `ws://${hostname}:4000`;
+  }
+  return 'ws://localhost:4000';
+};
+const WS_URL = getWsUrl();
 
 let socket: Socket | null = null;
 
@@ -31,7 +42,6 @@ export function useSocket() {
     socket.on('disconnect', () => {
       connected.current = false;
     });
-
     // Live MR location updates
     socket.on('mr:location:update', () => {
       fetchLiveMrs();
